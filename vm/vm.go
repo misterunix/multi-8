@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"fmt"
 	"math/rand"
 	"os"
 	"time"
@@ -144,8 +145,7 @@ func (v *vm) ExecuteOpCode() {
                 //v.StoreRegister(0xF, 1)
                 v.Registers[0xF] = 1
         } else {
-                v.StoreRegister(0xF, 0)
-                //v.Registers[0xF] = 0
+			v.Registers[0xF] = 0
         }
 		v.Registers[v.x] -= v.Registers[v.y]
 		case 0x0006:
@@ -173,6 +173,53 @@ func (v *vm) ExecuteOpCode() {
 	case 0xC000:
 		v.Registers[v.x] = uint8(v.rnd.Intn(256)) & v.nn
 	case 0xD000:
-		
+		yi := v.Registers[v.y]
+        xi := v.Registers[v.x]
+        v.Registers[0xF] = 0
 
+        for k := 0; k < int(v.n); k++ {
+                iv := v.I + uint16(k)
+                if iv >= 4096 {
+                        fmt.Println("ERROR: v.I + k out of bounds", iv)
+                        //v.Reset()
+                }
+                q := v.Memory[iv]
+                for j := 0; j < 8; j++ {
+                        b := (q >> (7 - j)) & 0x1
+                        if b == 1 {
+                                tindex := XYToIndex((uint8(int(xi)+j) % 64), (uint8(int(yi)+k) % 32))
+                                if tindex >= 2048 {
+                                        fmt.Println("ERROR: tindex out of bounds", tindex, (uint8(int(xi)+j) % 64), (uint8(int(yi)+k) % 32))
+                                        //v.Reset()
+                                }
+                                v.Screen[tindex] ^= 1
+								if v.Screen[tindex] == 0 {
+									v.Registers[0xF] = 1
+							}
+
+					}
+			}
+		}
+	
+
+
+case 0xF000:
+	switch v.OpCode & 0x00FF {
+	case 0x0007:
+		Register[v.x] = v.Timer
+	case 0x000A:
+	case 0x0015:
+		v.Timer = v.Registers[v.x]
+	case 0x0018:
+		v.Sound = v.Registers[v.x]
+	case 0x001E:
+		v.I += uint16(v.Registers[v.x])
+	case 0x0029:
+
+	
+
+}
+
+func XYToIndex(x uint8, y uint8) int {
+	return int(y)*SCREENWIDTH + int(x)
 }
