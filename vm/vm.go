@@ -15,7 +15,7 @@ const (
 	SCREENSIZE   = SCREENWIDTH * SCREENHEIGHT
 )
 
-type vm struct {
+type VM struct {
 	I         uint16 // Index register
 	Memory    [RAMSIZE]uint8
 	Stack     [STACKSIZE]uint16
@@ -35,13 +35,13 @@ type vm struct {
 	nnn       uint16     // nnn address
 }
 
-func New() vm {
-	v := vm{}
+func New() VM {
+	v := VM{}
 	v.Init()
 	return v
 }
 
-func (v *vm) Init() {
+func (v *VM) Init() {
 	v.rnd = rand.New(rand.NewSource(time.Now().UnixNano()))
 	v.PC = 0x200
 	v.SP = 0
@@ -64,7 +64,7 @@ func (v *vm) Init() {
 }
 
 // Lod the file into memory starting at 0x200
-func (v *vm) LoadProgram(program string) error {
+func (v *VM) LoadProgram(program string) error {
 	rom, err := os.ReadFile(program)
 	if err != nil {
 		return err
@@ -76,7 +76,7 @@ func (v *vm) LoadProgram(program string) error {
 }
 
 // Fetch the next opcode from memory
-func (v *vm) FetchOpCode() {
+func (v *VM) FetchOpCode() {
 	v.OpCode = uint16(v.Memory[v.PC])<<8 | uint16(v.Memory[v.PC+1]) // 2 bytes opcode
 	v.PC += 2
 	v.x = uint8((v.OpCode & 0x0F00) >> 8) // Decode Vx register
@@ -87,16 +87,17 @@ func (v *vm) FetchOpCode() {
 }
 
 // Execute the opcode
-func (v *vm) ExecuteOpCode() {
+func (v *VM) ExecuteOpCode() {
+	v.FetchOpCode()
 
 	switch v.OpCode & 0xF000 {
 	case 0x00E0:
-		for i:=0;i<SCREENSIZE;i++{
-			v.Screen[i]=0
+		for i := 0; i < SCREENSIZE; i++ {
+			v.Screen[i] = 0
 		}
 	case 0x00EE:
 		v.SP--
-        v.PC = v.Stack[v.SP]
+		v.PC = v.Stack[v.SP]
 	case 0x1000:
 		v.PC = v.nnn
 	case 0x2000:
@@ -142,22 +143,22 @@ func (v *vm) ExecuteOpCode() {
 			tx := v.Registers[v.x]
 			ty := v.Registers[v.y]
 			if int(tx) > int(ty) {
-                //v.StoreRegister(0xF, 1)
-                v.Registers[0xF] = 1
-        } else {
-			v.Registers[0xF] = 0
-        }
-		v.Registers[v.x] -= v.Registers[v.y]
+				//v.StoreRegister(0xF, 1)
+				v.Registers[0xF] = 1
+			} else {
+				v.Registers[0xF] = 0
+			}
+			v.Registers[v.x] -= v.Registers[v.y]
 		case 0x0006:
 			v.Registers[0xF] = v.Registers[v.x] & 0x1
 			v.Registers[v.x] /= 2
 		case 0x0007:
 			if int(v.Registers[v.y]) > int(v.Registers[v.x]) {
-                v.Registers[0xF] = 1
-        } else {
-                v.Registers[0xF] = 0
-        }
-        v.Registers[v.x] = v.Registers[v.y] - v.Registers[v.x]
+				v.Registers[0xF] = 1
+			} else {
+				v.Registers[0xF] = 0
+			}
+			v.Registers[v.x] = v.Registers[v.y] - v.Registers[v.x]
 		case 0x000E:
 			v.Registers[0xF] = v.Registers[v.x] >> 7
 			v.Registers[v.x] *= 2
@@ -174,52 +175,68 @@ func (v *vm) ExecuteOpCode() {
 		v.Registers[v.x] = uint8(v.rnd.Intn(256)) & v.nn
 	case 0xD000:
 		yi := v.Registers[v.y]
-        xi := v.Registers[v.x]
-        v.Registers[0xF] = 0
+		xi := v.Registers[v.x]
+		v.Registers[0xF] = 0
 
-        for k := 0; k < int(v.n); k++ {
-                iv := v.I + uint16(k)
-                if iv >= 4096 {
-                        fmt.Println("ERROR: v.I + k out of bounds", iv)
-                        //v.Reset()
-                }
-                q := v.Memory[iv]
-                for j := 0; j < 8; j++ {
-                        b := (q >> (7 - j)) & 0x1
-                        if b == 1 {
-                                tindex := XYToIndex((uint8(int(xi)+j) % 64), (uint8(int(yi)+k) % 32))
-                                if tindex >= 2048 {
-                                        fmt.Println("ERROR: tindex out of bounds", tindex, (uint8(int(xi)+j) % 64), (uint8(int(yi)+k) % 32))
-                                        //v.Reset()
-                                }
-                                v.Screen[tindex] ^= 1
-								if v.Screen[tindex] == 0 {
-									v.Registers[0xF] = 1
-							}
-
+		for k := 0; k < int(v.n); k++ {
+			iv := v.I + uint16(k)
+			if iv >= 4096 {
+				fmt.Println("ERROR: v.I + k out of bounds", iv)
+				//v.Reset()
+			}
+			q := v.Memory[iv]
+			for j := 0; j < 8; j++ {
+				b := (q >> (7 - j)) & 0x1
+				if b == 1 {
+					tindex := XYToIndex((uint8(int(xi)+j) % 64), (uint8(int(yi)+k) % 32))
+					if tindex >= 2048 {
+						fmt.Println("ERROR: tindex out of bounds", tindex, (uint8(int(xi)+j) % 64), (uint8(int(yi)+k) % 32))
+						//v.Reset()
 					}
+					v.Screen[tindex] ^= 1
+					if v.Screen[tindex] == 0 {
+						v.Registers[0xF] = 1
+					}
+
+				}
 			}
 		}
-	
 
-
-case 0xF000:
-	switch v.OpCode & 0x00FF {
-	case 0x0007:
-		Register[v.x] = v.Timer
-	case 0x000A:
-	case 0x0015:
-		v.Timer = v.Registers[v.x]
-	case 0x0018:
-		v.Sound = v.Registers[v.x]
-	case 0x001E:
-		v.I += uint16(v.Registers[v.x])
-	case 0x0029:
-
-	
-
+	case 0xF000:
+		switch v.OpCode & 0x00FF {
+		case 0x0007:
+			v.Registers[v.x] = v.Timer
+		case 0x000A:
+		case 0x0015:
+			v.Timer = v.Registers[v.x]
+		case 0x0018:
+			v.Sound = v.Registers[v.x]
+		case 0x001E:
+			v.I += uint16(v.Registers[v.x])
+		case 0x0029:
+			v.I = uint16(v.Registers[v.x]) * 5
+		case 0x0033:
+			v.Memory[v.I] = v.Registers[v.x] / 100
+			v.Memory[v.I+1] = (v.Registers[v.x] / 10) % 10
+			v.Memory[v.I+2] = (v.Registers[v.x] % 100) % 10
+		case 0x0055:
+			for i := 0; i <= int(v.x); i++ {
+				v.Memory[v.I+uint16(i)] = v.Registers[i]
+			}
+		case 0x0065:
+			for i := 0; i <= int(v.x); i++ {
+				v.Registers[i] = v.Memory[v.I+uint16(i)]
+			}
+		}
+	}
 }
 
+// Convert x,y coordinates to screen index
 func XYToIndex(x uint8, y uint8) int {
 	return int(y)*SCREENWIDTH + int(x)
+}
+
+// Convert screen index to x,y coordinates
+func IndexToXY(index int) (uint8, uint8) {
+	return uint8(index % SCREENWIDTH), uint8(index / SCREENWIDTH)
 }
