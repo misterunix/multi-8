@@ -14,13 +14,13 @@ http://www.emulator101.com/chip-8-emulator.html
 http://devernay.free.fr/hacks/chip8/C8TECH10.HTM  
 http://devernay.free.fr/hacks/chip8/chip8def.htm  
 https://tobiasvl.github.io/blog/write-a-chip-8-emulator/  
-
+http://pong-story.com/chip8/  
 
 ## CHIP-8
 |ROM|Status|Notes|
 |:-|-:|:-|
 |IBM.ch8|works|First test rom. True chip-8|
-|caveexplorer.ch8|fails|I dont think this is a original chip-8|
+|caveexplorer.ch8|fails|It is lists as chip-8. Not sure.|
 
 
 

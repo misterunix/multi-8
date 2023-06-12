@@ -25,6 +25,7 @@ func main() {
 	vm = v.New(debug)
 
 	vm.LoadProgram("roms/caveexplorer.ch8")
+	rl.SetTraceLog(rl.LogError)
 
 	rl.InitWindow(screenWidth, screenHeight, "multi-8")
 	defer rl.CloseWindow()
