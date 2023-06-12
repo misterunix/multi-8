@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+
 	"time"
 )
 
@@ -33,11 +34,13 @@ type VM struct {
 	n         uint8      // n nibble
 	nn        uint8      // nn byte
 	nnn       uint16     // nnn address
+	debug     bool       // debug mode
 }
 
-func New() VM {
+func New(debug bool) VM {
 	v := VM{}
 	v.Init()
+	v.debug = debug
 	return v
 }
 
@@ -69,8 +72,10 @@ func (v *VM) LoadProgram(program string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Loading program:", program)
-	fmt.Println("Program size:", len(rom))
+	if v.debug {
+		fmt.Println("Loading program:", program)
+		fmt.Println("Program size:", len(rom))
+	}
 	for i := 0; i < len(rom); i++ {
 		v.Memory[0x200+i] = rom[i]
 	}
@@ -87,8 +92,9 @@ func (v *VM) FetchOpCode() {
 	v.nn = uint8(v.OpCode & 0x00FF)                                 // nn is the last two bytes of the opcode
 	v.nnn = uint16(v.OpCode & 0x0FFF)                               // nnn is the last three bytes of the opcode
 
-	fmt.Printf("PC: %04X OpCode: %04X x: %X y: %X n: %X nn: %X nnn: %X ", v.PC, v.OpCode, v.x, v.y, v.n, v.nn, v.nnn)
-
+	if v.debug {
+		fmt.Printf("PC: %04X OpCode: %04X x: %X y: %X n: %X nn: %X nnn: %X ", v.PC, v.OpCode, v.x, v.y, v.n, v.nn, v.nnn)
+	}
 	v.PC += 2
 }
 
@@ -180,7 +186,9 @@ func (v *VM) ExecuteOpCode() {
 	case 0xC000:
 		v.Registers[v.x] = uint8(v.rnd.Intn(256)) & v.nn
 	case 0xD000:
-		fmt.Print("Dxyn - DRW Vx, Vy, nibble")
+		if v.debug {
+			fmt.Print("Dxyn - DRW Vx, Vy, nibble")
+		}
 		yi := v.Registers[v.y]
 		xi := v.Registers[v.x]
 		v.Registers[0xF] = 0
@@ -236,7 +244,9 @@ func (v *VM) ExecuteOpCode() {
 			}
 		}
 	}
-	fmt.Println()
+	if v.debug {
+		fmt.Println()
+	}
 }
 
 // Convert x,y coordinates to screen index

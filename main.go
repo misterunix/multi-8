@@ -1,8 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	v "multi-8/vm"
+	"time"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
@@ -13,17 +15,30 @@ const screenHeight = 320
 var vm v.VM
 var scale int32 = 10
 
+var debug bool = false
+
 func main() {
 	fmt.Println("Starting multi-8.")
 
-	vm = v.New()
+	flag.BoolVar(&debug, "debug", false, "Enable debug mode.")
 
-	vm.LoadProgram("roms/IBM.ch8")
+	vm = v.New(debug)
+
+	vm.LoadProgram("roms/caveexplorer.ch8")
 
 	rl.InitWindow(screenWidth, screenHeight, "multi-8")
 	defer rl.CloseWindow()
 
 	rl.SetTargetFPS(60)
+
+	// run the vm here
+	go func() {
+		for {
+			vm.ExecuteOpCode()
+			time.Sleep(1 * time.Millisecond) // 1000hz
+		}
+	}()
+
 	for !rl.WindowShouldClose() {
 		update()
 		draw()
@@ -32,7 +47,7 @@ func main() {
 }
 
 func update() {
-	vm.ExecuteOpCode()
+	//vm.ExecuteOpCode()
 }
 
 func draw() {
