@@ -69,6 +69,8 @@ func (v *VM) LoadProgram(program string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("Loading program:", program)
+	fmt.Println("Program size:", len(rom))
 	for i := 0; i < len(rom); i++ {
 		v.Memory[0x200+i] = rom[i]
 	}
@@ -77,13 +79,17 @@ func (v *VM) LoadProgram(program string) error {
 
 // Fetch the next opcode from memory
 func (v *VM) FetchOpCode() {
+
 	v.OpCode = uint16(v.Memory[v.PC])<<8 | uint16(v.Memory[v.PC+1]) // 2 bytes opcode
+	v.x = uint8((v.OpCode & 0x0F00) >> 8)                           // Decode Vx register
+	v.y = uint8((v.OpCode & 0x00F0) >> 4)                           // Decode Vy register
+	v.n = uint8(v.OpCode & 0x000F)                                  //  n is the last nibble of the opcode
+	v.nn = uint8(v.OpCode & 0x00FF)                                 // nn is the last two bytes of the opcode
+	v.nnn = uint16(v.OpCode & 0x0FFF)                               // nnn is the last three bytes of the opcode
+
+	fmt.Printf("PC: %04X OpCode: %04X x: %X y: %X n: %X nn: %X nnn: %X ", v.PC, v.OpCode, v.x, v.y, v.n, v.nn, v.nnn)
+
 	v.PC += 2
-	v.x = uint8((v.OpCode & 0x0F00) >> 8) // Decode Vx register
-	v.y = uint8((v.OpCode & 0x00F0) >> 4) // Decode Vy register
-	v.n = uint8(v.OpCode & 0x000F)        //  n is the last nibble of the opcode
-	v.nn = uint8(v.OpCode & 0x00FF)       // nn is the last two bytes of the opcode
-	v.nnn = uint16(v.OpCode & 0x0FFF)     // nnn is the last three bytes of the opcode
 }
 
 // Execute the opcode
@@ -174,6 +180,7 @@ func (v *VM) ExecuteOpCode() {
 	case 0xC000:
 		v.Registers[v.x] = uint8(v.rnd.Intn(256)) & v.nn
 	case 0xD000:
+		fmt.Print("Dxyn - DRW Vx, Vy, nibble")
 		yi := v.Registers[v.y]
 		xi := v.Registers[v.x]
 		v.Registers[0xF] = 0
@@ -229,6 +236,7 @@ func (v *VM) ExecuteOpCode() {
 			}
 		}
 	}
+	fmt.Println()
 }
 
 // Convert x,y coordinates to screen index

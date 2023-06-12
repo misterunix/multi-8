@@ -11,6 +11,7 @@ const screenWidth = 640
 const screenHeight = 320
 
 var vm v.VM
+var scale int32 = 10
 
 func main() {
 	fmt.Println("Starting multi-8.")
@@ -40,9 +41,13 @@ func draw() {
 	for y := 0; y < v.SCREENHEIGHT; y++ {
 		for x := 0; x < v.SCREENWIDTH; x++ {
 			ti := v.XYToIndex(uint8(x), uint8(y))
-			if ti == 1 {
-				rl.DrawRectangle(int32(x), int32(y), 1, 1, rl.White)
+			p := vm.Screen[ti]
+			if p == 1 {
+				rl.DrawRectangle(int32(x)*scale, int32(y)*scale, 1*scale, 1*scale, rl.White)
+			} else {
+				rl.DrawRectangle(int32(x)*scale, int32(y)*scale, 1*scale, 1*scale, rl.Black)
 			}
 		}
 	}
+	rl.EndDrawing()
 }
